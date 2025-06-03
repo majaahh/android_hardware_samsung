@@ -286,6 +286,12 @@ Status UsbGadget::setupFunctions(long functions, const shared_ptr<IUsbGadgetCall
         }
     }
 
+    if ((functions == GadgetFunction::ADB) || ((functions & GadgetFunction::MTP) != 0)) {
+        ALOGI("setCurrentUsbFunctions mass_storage");
+        if (linkFunction("mass_storage.0", i++))
+            return Status::ERROR;
+    }
+
     // Pull up the gadget right away when there are no ffs functions.
     if (!ffsEnabled) {
         if (!WriteStringToFile(kGadgetName, PULLUP_PATH)) {
