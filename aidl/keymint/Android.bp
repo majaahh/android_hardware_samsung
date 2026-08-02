@@ -38,11 +38,6 @@ cc_binary {
         "android.hardware.security.secureclock-V1-ndk",
         "libbase",
         "libbinder_ndk",
-        "libcppbor",
-        "libcrypto-v33",
-        "liblog",
-        "libpuresoftkeymasterdevice",
-        "libutils",
     ] + select(soong_config_variable("samsungKeymintVars", "samsung_keymint_library"), {
         any @ flag_val: [flag_val],
         default: [],
