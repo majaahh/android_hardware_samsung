@@ -1,31 +1,16 @@
 package {
-    default_applicable_licenses: [
-        "Android-Apache-2.0",
-    ],
-}
-
-vintf_fragment {
-    name: "android.hardware.security.keymint-service.samsung.xml",
-    src: "android.hardware.security.keymint-service.samsung.xml",
-    vendor: true,
-}
-
-vintf_fragment {
-    name: "android.hardware.security.sharedsecret-service.samsung.xml",
-    src: "android.hardware.security.sharedsecret-service.samsung.xml",
-    vendor: true,
-}
-
-vintf_fragment {
-    name: "android.hardware.security.secureclock-service.samsung.xml",
-    src: "android.hardware.security.secureclock-service.samsung.xml",
-    vendor: true,
+    default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
 cc_binary {
     name: "android.hardware.security.keymint-service.samsung",
     relative_install_path: "hw",
     init_rc: ["android.hardware.security.keymint-service.samsung.rc"],
+    vintf_fragments: [
+        "android.hardware.security.keymint-service.samsung.xml",
+        "android.hardware.security.sharedsecret-service.samsung.xml",
+        "android.hardware.security.secureclock-service.samsung.xml",
+    ],
     vendor: true,
     cflags: [
         "-Wall",
@@ -50,10 +35,5 @@ cc_binary {
     ],
     required: [
         "android.hardware.hardware_keystore.xml",
-    ],
-    vintf_fragment_modules: [
-        "android.hardware.security.keymint-service.samsung.xml",
-        "android.hardware.security.sharedsecret-service.samsung.xml",
-        "android.hardware.security.secureclock-service.samsung.xml",
     ],
 }
