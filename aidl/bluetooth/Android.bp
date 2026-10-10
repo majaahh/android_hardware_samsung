@@ -25,7 +25,7 @@ cc_defaults {
 }
 
 cc_library_static {
-    name: "libbluetoothhcihalimpl",
+    name: "libbluetoothhcihalimpl.samsung",
     vendor_available: true,
     defaults: ["android.hardware.bluetooth-service-build-defaults"],
     srcs: [
@@ -35,10 +35,10 @@ cc_library_static {
 }
 
 cc_binary {
-    name: "android.hardware.bluetooth-service.default",
+    name: "android.hardware.bluetooth-service.samsung",
     relative_install_path: "hw",
-    init_rc: ["bluetooth-service-default.rc"],
-    vintf_fragments: [":manifest_android.hardware.bluetooth-service.default.xml"],
+    init_rc: ["bluetooth-service-samsung.rc"],
+    vintf_fragments: [":manifest_android.hardware.bluetooth-service.samsung.xml"],
     vendor: true,
     defaults: ["android.hardware.bluetooth-service-build-defaults"],
     srcs: [
@@ -53,11 +53,11 @@ cc_binary {
         "liblog",
     ],
     static_libs: [
-        "libbluetoothhcihalimpl",
+        "libbluetoothhcihalimpl.samsung",
     ],
 }
 
 filegroup {
-    name: "manifest_android.hardware.bluetooth-service.default.xml",
-    srcs: ["bluetooth-service-default.xml"],
+    name: "manifest_android.hardware.bluetooth-service.samsung.xml",
+    srcs: ["bluetooth-service-samsung.xml"],
 }

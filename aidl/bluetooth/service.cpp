@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "aidl.android.hardware.bluetooth.service.default"
+#define LOG_TAG "aidl.android.hardware.bluetooth.service.samsung"
 
 #include <android/binder_manager.h>
 #include <android/binder_process.h>
