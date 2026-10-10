@@ -16,10 +16,15 @@
 
 #pragma once
 
-#include <hal/ffi.h>
+#include <aidl/android/hardware/bluetooth/BnBluetoothHci.h>
+
+#include <android/binder_ibinder.h>
 
 #include <future>
+#include <memory>
+#include <mutex>
 #include <string>
+#include <vector>
 
 #include "async_fd_watcher.h"
 #include "h4_protocol.h"
@@ -28,23 +33,24 @@
 namespace aidl::android::hardware::bluetooth::impl {
 
 // This Bluetooth HAL implementation connects with a serial port at dev_path_.
-class BluetoothHci : public hal::IBluetoothHci {
+class BluetoothHci : public BnBluetoothHci {
   public:
     BluetoothHci(const std::string& dev_path = "/dev/hvc5");
+    ~BluetoothHci();
 
-    void initialize(const std::shared_ptr<hal::IBluetoothHciCallbacks>& cb) override;
+    ::ndk::ScopedAStatus initialize(const std::shared_ptr<IBluetoothHciCallbacks>& cb) override;
 
-    void sendHciCommand(const std::vector<uint8_t>& packet) override;
+    ::ndk::ScopedAStatus sendHciCommand(const std::vector<uint8_t>& packet) override;
 
-    void sendAclData(const std::vector<uint8_t>& packet) override;
+    ::ndk::ScopedAStatus sendAclData(const std::vector<uint8_t>& packet) override;
 
-    void sendScoData(const std::vector<uint8_t>& packet) override;
+    ::ndk::ScopedAStatus sendScoData(const std::vector<uint8_t>& packet) override;
 
-    void sendIsoData(const std::vector<uint8_t>& packet) override;
+    ::ndk::ScopedAStatus sendIsoData(const std::vector<uint8_t>& packet) override;
 
-    void close() override;
+    ::ndk::ScopedAStatus close() override;
 
-    void clientDied() override;
+    void clientDied();
 
     static void OnPacketReady();
 
@@ -52,13 +58,16 @@ class BluetoothHci : public hal::IBluetoothHci {
 
   private:
     int mFd{-1};
-    std::shared_ptr<hal::IBluetoothHciCallbacks> mCb = nullptr;
+    std::shared_ptr<IBluetoothHciCallbacks> mCb = nullptr;
 
     std::shared_ptr<::android::hardware::bluetooth::hci::H4Protocol> mH4;
 
     std::string mDevPath;
 
     ::android::hardware::bluetooth::async::AsyncFdWatcher mFdWatcher;
+
+    AIBinder_DeathRecipient* mDeathRecipient = nullptr;
+    static void OnClientDied(void* cookie);
 
     int getFdFromDevPath();
     void send(::android::hardware::bluetooth::hci::PacketType type,

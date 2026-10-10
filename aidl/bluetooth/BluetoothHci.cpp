@@ -44,7 +44,6 @@ int SetTerminalRaw(int fd) {
 
 using namespace ::android::hardware::bluetooth::hci;
 using namespace ::android::hardware::bluetooth::async;
-using aidl::android::hardware::bluetooth::hal::Status;
 
 namespace aidl::android::hardware::bluetooth::impl {
 
@@ -65,6 +64,15 @@ BluetoothHci::BluetoothHci(const std::string& dev_path) {
     char property_bytes[PROPERTY_VALUE_MAX];
     property_get("vendor.ser.bt-uart", property_bytes, dev_path.c_str());
     mDevPath = std::string(property_bytes);
+    mDeathRecipient = AIBinder_DeathRecipient_new(OnClientDied);
+}
+
+BluetoothHci::~BluetoothHci() {
+    AIBinder_DeathRecipient_delete(mDeathRecipient);
+}
+
+void BluetoothHci::OnClientDied(void* cookie) {
+    static_cast<BluetoothHci*>(cookie)->clientDied();
 }
 
 int BluetoothHci::getFdFromDevPath() {
@@ -134,7 +142,7 @@ void BluetoothHci::reset() {
     resetPromise.reset();
 }
 
-void BluetoothHci::initialize(const std::shared_ptr<hal::IBluetoothHciCallbacks>& cb) {
+::ndk::ScopedAStatus BluetoothHci::initialize(const std::shared_ptr<IBluetoothHciCallbacks>& cb) {
     ALOGI(__func__);
 
     if (cb == nullptr) {
@@ -154,11 +162,16 @@ void BluetoothHci::initialize(const std::shared_ptr<hal::IBluetoothHciCallbacks>
 
     if (old_state != HalState::READY) {
         ALOGE("initialize: Unexpected State %d", static_cast<int>(old_state));
-        close();
+        (void)close();
         cb->initializationComplete(Status::ALREADY_INITIALIZED);
     }
 
     mCb = cb;
+
+    if (AIBinder_linkToDeath(cb->asBinder().get(), mDeathRecipient, this) != STATUS_OK) {
+        ALOGE("Failed to link to death");
+    }
+
     management_.reset(new NetBluetoothMgmt);
     mFd = management_->openHci();
     if (mFd < 0) {
@@ -206,9 +219,10 @@ void BluetoothHci::initialize(const std::shared_ptr<hal::IBluetoothHciCallbacks>
     }
     ALOGI("initialization complete");
     mCb->initializationComplete(Status::SUCCESS);
+    return ::ndk::ScopedAStatus::ok();
 }
 
-void BluetoothHci::close() {
+::ndk::ScopedAStatus BluetoothHci::close() {
     ALOGI(__func__);
     {
         std::lock_guard<std::mutex> guard(mStateMutex);
@@ -217,6 +231,10 @@ void BluetoothHci::close() {
             ALOGI("Already closed");
         }
         mState = HalState::CLOSING;
+    }
+
+    if (mCb != nullptr) {
+        AIBinder_unlinkToDeath(mCb->asBinder().get(), mDeathRecipient, this);
     }
 
     mFdWatcher.StopWatchingFileDescriptors();
@@ -232,27 +250,32 @@ void BluetoothHci::close() {
         mState = HalState::READY;
         mH4 = nullptr;
     }
+    return ::ndk::ScopedAStatus::ok();
 }
 
 void BluetoothHci::clientDied() {
     ALOGI(__func__);
-    close();
+    (void)close();
 }
 
-void BluetoothHci::sendHciCommand(const std::vector<uint8_t>& packet) {
-    return send(PacketType::COMMAND, packet);
+::ndk::ScopedAStatus BluetoothHci::sendHciCommand(const std::vector<uint8_t>& packet) {
+    send(PacketType::COMMAND, packet);
+    return ::ndk::ScopedAStatus::ok();
 }
 
-void BluetoothHci::sendAclData(const std::vector<uint8_t>& packet) {
-    return send(PacketType::ACL_DATA, packet);
+::ndk::ScopedAStatus BluetoothHci::sendAclData(const std::vector<uint8_t>& packet) {
+    send(PacketType::ACL_DATA, packet);
+    return ::ndk::ScopedAStatus::ok();
 }
 
-void BluetoothHci::sendScoData(const std::vector<uint8_t>& packet) {
-    return send(PacketType::SCO_DATA, packet);
+::ndk::ScopedAStatus BluetoothHci::sendScoData(const std::vector<uint8_t>& packet) {
+    send(PacketType::SCO_DATA, packet);
+    return ::ndk::ScopedAStatus::ok();
 }
 
-void BluetoothHci::sendIsoData(const std::vector<uint8_t>& packet) {
-    return send(PacketType::ISO_DATA, packet);
+::ndk::ScopedAStatus BluetoothHci::sendIsoData(const std::vector<uint8_t>& packet) {
+    send(PacketType::ISO_DATA, packet);
+    return ::ndk::ScopedAStatus::ok();
 }
 
 void BluetoothHci::send(PacketType type, const std::vector<uint8_t>& v) {

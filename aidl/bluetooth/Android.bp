@@ -20,7 +20,6 @@ cc_defaults {
     static_libs: [
         "android.hardware.bluetooth.async",
         "android.hardware.bluetooth.hci",
-        "libbluetooth_offload_hal",
     ],
 }
 

@@ -16,17 +16,19 @@
 
 #define LOG_TAG "aidl.android.hardware.bluetooth.service.samsung"
 
+#include <android-base/logging.h>
+#include <android/binder_auto_utils.h>
 #include <android/binder_manager.h>
 #include <android/binder_process.h>
-#include <hidl/HidlSupport.h>
-#include <hidl/HidlTransportSupport.h>
+
+#include <memory>
+#include <string>
+
+#include "log/log.h"
 
 #include "BluetoothHci.h"
 
-using ::aidl::android::hardware::bluetooth::hal::IBluetoothHci_addService;
-using ::aidl::android::hardware::bluetooth::impl::BluetoothHci;
-using ::android::hardware::configureRpcThreadpool;
-using ::android::hardware::joinRpcThreadpool;
+using aidl::android::hardware::bluetooth::impl::BluetoothHci;
 
 int main(int /* argc */, char** /* argv */) {
     ALOGI("Bluetooth HAL starting");
@@ -35,7 +37,10 @@ int main(int /* argc */, char** /* argv */) {
         return 1;
     }
 
-    IBluetoothHci_addService(new BluetoothHci());
+    std::shared_ptr<BluetoothHci> hci = ndk::SharedRefBase::make<BluetoothHci>();
+    const std::string instance = std::string() + BluetoothHci::descriptor + "/default";
+    binder_status_t status = AServiceManager_addService(hci->asBinder().get(), instance.c_str());
+    CHECK(status == STATUS_OK) << "Failed to add service " << instance;
     ABinderProcess_joinThreadPool();
     return 0;
 }
