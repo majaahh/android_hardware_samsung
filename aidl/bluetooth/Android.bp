@@ -13,6 +13,7 @@ cc_defaults {
         "libbase",
         "libbinder_ndk",
         "libcutils",
+        "libdl",
         "libhidlbase",
         "liblog",
         "libutils",
@@ -29,7 +30,9 @@ cc_library_static {
     defaults: ["android.hardware.bluetooth-service-build-defaults"],
     srcs: [
         "BluetoothHci.cpp",
+        "bluetooth_address.cc",
         "net_bluetooth_mgmt.cpp",
+        "vendor_interface.cc",
     ],
 }
 
@@ -54,6 +57,7 @@ cc_binary {
     static_libs: [
         "libbluetoothhcihalimpl.samsung",
     ],
+    required: ["libbt-vendor"],
 }
 
 filegroup {

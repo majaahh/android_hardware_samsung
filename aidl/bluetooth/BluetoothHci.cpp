@@ -28,6 +28,7 @@
 #include <termios.h>
 
 #include "log/log.h"
+#include "vendor_interface.h"
 
 namespace {
 int SetTerminalRaw(int fd) {
@@ -172,6 +173,24 @@ void BluetoothHci::reset() {
         ALOGE("Failed to link to death");
     }
 
+    if (VendorInterface::get() == nullptr &&
+        VendorInterface::Initialize(
+                [this](bool success) {
+                    mCb->initializationComplete(success ? Status::SUCCESS
+                                                        : Status::HARDWARE_INITIALIZATION_ERROR);
+                },
+                [this](const std::vector<uint8_t>& raw_event) { mCb->hciEventReceived(raw_event); },
+                [this](const std::vector<uint8_t>& raw_acl) { mCb->aclDataReceived(raw_acl); },
+                [this](const std::vector<uint8_t>& raw_sco) { mCb->scoDataReceived(raw_sco); },
+                [this](const std::vector<uint8_t>& raw_iso) { mCb->isoDataReceived(raw_iso); })) {
+        {
+            std::lock_guard<std::mutex> guard(mStateMutex);
+            mState = HalState::ONE_CLIENT;
+        }
+        ALOGI("initialization complete (libbt-vendor)");
+        return ::ndk::ScopedAStatus::ok();
+    }
+
     management_.reset(new NetBluetoothMgmt);
     mFd = management_->openHci();
     if (mFd < 0) {
@@ -237,12 +256,16 @@ void BluetoothHci::reset() {
         AIBinder_unlinkToDeath(mCb->asBinder().get(), mDeathRecipient, this);
     }
 
-    mFdWatcher.StopWatchingFileDescriptors();
-
-    if (management_) {
-        management_->closeHci();
+    if (VendorInterface::get() != nullptr) {
+        VendorInterface::Shutdown();
     } else {
-        ::close(mFd);
+        mFdWatcher.StopWatchingFileDescriptors();
+
+        if (management_) {
+            management_->closeHci();
+        } else {
+            ::close(mFd);
+        }
     }
 
     {
@@ -282,6 +305,12 @@ void BluetoothHci::send(PacketType type, const std::vector<uint8_t>& v) {
     if (v.empty()) {
         ALOGE("Packet is empty, no data was found to be sent");
         abort();
+    }
+
+    VendorInterface* vendor = VendorInterface::get();
+    if (vendor != nullptr) {
+        vendor->Send(static_cast<uint8_t>(type), v.data(), v.size());
+        return;
     }
 
     std::lock_guard<std::mutex> guard(mStateMutex);
