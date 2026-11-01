@@ -42,9 +42,11 @@ cc_binary {
         "libcrypto-v33",
         "liblog",
         "libpuresoftkeymasterdevice",
-        "libskeymint10device",
         "libutils",
-    ],
+    ] + select(soong_config_variable("samsungKeymintVars", "samsung_keymint_library"), {
+        any @ flag_val: [flag_val],
+        default: [],
+    }),
     srcs: [
         "service.cpp",
     ],
