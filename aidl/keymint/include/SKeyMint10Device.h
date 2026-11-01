@@ -74,6 +74,13 @@ class SKeyMint10Device : public BnKeyMintDevice {
                                         const vector<uint8_t>& appData,
                                         vector<KeyCharacteristics>* keyCharacteristics) override;
 
+#ifdef KEYMINT_HAS_ROT
+    ScopedAStatus getRootOfTrustChallenge(array<uint8_t, 16>* challenge) override;
+    ScopedAStatus getRootOfTrust(const array<uint8_t, 16>& challenge,
+                                 vector<uint8_t>* rootOfTrust) override;
+    ScopedAStatus sendRootOfTrust(const vector<uint8_t>& rootOfTrust) override;
+#endif
+
     void initialize();
 
   protected:
