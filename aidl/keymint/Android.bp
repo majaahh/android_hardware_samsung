@@ -19,6 +19,7 @@ cc_binary {
         "-Wextra",
     ] + select(soong_config_variable("samsungKeymintVars", "target_keymint_version"), {
         "2": ["-DKEYMINT_HAS_ROT"],
+        "3": ["-DKEYMINT_HAS_ROT", "-DKEYMINT_HAS_CSR_V2"],
         default: [],
     }),
     shared_libs: [

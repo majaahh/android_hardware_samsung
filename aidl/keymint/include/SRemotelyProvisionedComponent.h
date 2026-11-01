@@ -38,5 +38,11 @@ class SRemotelyProvisionedComponent : public BnRemotelyProvisionedComponent {
                                              const vector<uint8_t>& challenge,
                                              DeviceInfo* deviceInfo, ProtectedData* protectedData,
                                              vector<uint8_t>* keysToSignMac) override;
+
+#ifdef KEYMINT_HAS_CSR_V2
+    ScopedAStatus generateCertificateRequestV2(const vector<MacedPublicKey>& keysToSign,
+                                               const vector<uint8_t>& challenge,
+                                               vector<uint8_t>* csr) override;
+#endif
 };
 }  // namespace skeymint
